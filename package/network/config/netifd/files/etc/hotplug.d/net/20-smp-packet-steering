@@ -4,7 +4,7 @@
 NPROCS="$(grep -c "^processor.*:" /proc/cpuinfo)"
 [ "$NPROCS" -gt 1 ] || exit
 
-PROC_MASK="$(( (1 << $NPROCS) - 1 ))"
+PROC_MASK="$(( (1 << $NPROCS) - 2 ))"
 
 find_irq_cpu() {
 	local dev="$1"

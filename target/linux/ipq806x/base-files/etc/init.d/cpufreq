@@ -5,6 +5,9 @@ START=15
 boot() {
   local governor
 
+  echo performance > /sys/devices/system/cpu/cpufreq/policy0/scaling_governor
+  echo performance > /sys/devices/system/cpu/cpufreq/policy1/scaling_governor
+
   governor=$(cat /sys/devices/system/cpu/cpufreq/policy0/scaling_governor)
 
   if [ "$governor" = "ondemand" ]; then
