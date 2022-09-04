@@ -1,0 +1,60 @@
+From cfc0209e8eba0e230aa56577ce3a8b5e1e319ec8 Mon Sep 17 00:00:00 2001
+From: Ritaro Takenaka <ritarot634@gmail.com>
+Date: Sun, 4 Sep 2022 20:44:39 +0900
+Subject: [PATCH 4/4] ipq8062: backport clk fixes
+
+---
+ drivers/clk/qcom/gcc-ipq806x.c | 21 ++++++++++++++++++---
+ 1 file changed, 18 insertions(+), 3 deletions(-)
+
+--- a/drivers/clk/qcom/gcc-ipq806x.c
++++ b/drivers/clk/qcom/gcc-ipq806x.c
+@@ -2697,7 +2697,14 @@ static struct clk_branch nss_tcm_clk = {
+ 	},
+ };
+ 
+-static const struct freq_tbl clk_tbl_nss[] = {
++static const struct freq_tbl clk_tbl_nss_ipq8062[] = {
++	{ 110000000, P_PLL18, 1, 1, 5 },
++	{ 275000000, P_PLL18, 2, 0, 0 },
++	{ 550000000, P_PLL18, 1, 0, 0 },
++	{ }
++};
++
++static const struct freq_tbl clk_tbl_nss_ipq8064[] = {
+ 	{ 110000000, P_PLL18, 1, 1, 5 },
+ 	{ 275000000, P_PLL18, 2, 0, 0 },
+ 	{ 550000000, P_PLL18, 1, 0, 0 },
+@@ -2746,7 +2753,7 @@ static struct clk_dyn_rcg ubi32_core1_sr
+ 		.pre_div_width = 2,
+ 	},
+ 	.mux_sel_bit = 0,
+-	.freq_tbl = clk_tbl_nss,
++	/* nss freq table is selected based on the SoC compatible */
+ 	.clkr = {
+ 		.enable_reg = 0x3d20,
+ 		.enable_mask = BIT(1),
+@@ -2800,7 +2807,7 @@ static struct clk_dyn_rcg ubi32_core2_sr
+ 		.pre_div_width = 2,
+ 	},
+ 	.mux_sel_bit = 0,
+-	.freq_tbl = clk_tbl_nss,
++	/* nss freq table is selected based on the SoC compatible */
+ 	.clkr = {
+ 		.enable_reg = 0x3d40,
+ 		.enable_mask = BIT(1),
+@@ -3326,6 +3333,14 @@ static int gcc_ipq806x_probe(struct plat
+ 	if (ret)
+ 		return ret;
+ 
++	if (of_machine_is_compatible("qcom,ipq8062")) {
++		ubi32_core1_src_clk.freq_tbl = clk_tbl_nss_ipq8062;
++		ubi32_core2_src_clk.freq_tbl = clk_tbl_nss_ipq8062;
++	} else {
++		ubi32_core1_src_clk.freq_tbl = clk_tbl_nss_ipq8064;
++		ubi32_core2_src_clk.freq_tbl = clk_tbl_nss_ipq8064;
++	}
++
+ 	ret = qcom_cc_probe(pdev, &gcc_ipq806x_desc);
+ 	if (ret)
+ 		return ret;
