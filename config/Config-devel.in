@@ -76,7 +76,8 @@ menuconfig DEVEL
 
 	config KERNEL_CFLAGS
 		string "Kernel extra CFLAGS" if DEVEL
-		default "-falign-functions=32" if TARGET_bcm53xx
+		default "-falign-functions=32" if TARGET_bcm53x
+		default "-falign-functions=32 -finline-functions" if TARGET_ipq806x
 		default ""
 
 	config EXTERNAL_KERNEL_TREE

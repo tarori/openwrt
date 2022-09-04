@@ -1,0 +1,21 @@
+From 5374f86341f2021f233931e5850f0658a87f4e2b Mon Sep 17 00:00:00 2001
+From: Ritaro Takenaka <ritarot634@gmail.com>
+Date: Sun, 4 Sep 2022 20:36:02 +0900
+Subject: [PATCH 3/4] stmmac: fix rx_count_frames
+
+---
+ drivers/net/ethernet/stmicro/stmmac/stmmac_main.c | 3 +--
+ 1 file changed, 1 insertion(+), 2 deletions(-)
+
+--- a/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
++++ b/drivers/net/ethernet/stmicro/stmmac/stmmac_main.c
+@@ -3730,8 +3730,7 @@ static inline void stmmac_rx_refill(stru
+ 		stmmac_refill_desc3(priv, rx_q, p);
+ 
+ 		rx_q->rx_count_frames++;
+-		rx_q->rx_count_frames += priv->rx_coal_frames;
+-		if (rx_q->rx_count_frames > priv->rx_coal_frames)
++		if (rx_q->rx_count_frames >= priv->rx_coal_frames)
+ 			rx_q->rx_count_frames = 0;
+ 
+ 		use_rx_wd = !priv->rx_coal_frames;
