@@ -32,6 +32,7 @@ platform_do_upgrade() {
 			nand_do_upgrade "$1"
 		fi
 		;;
+	netgear,wax206|\
 	linksys,e8450-ubi)
 		CI_KERNPART="fit"
 		nand_do_upgrade "$1"
@@ -68,6 +69,7 @@ platform_check_image() {
 		buffalo_check_image "$board" "$magic" "$1" || return 1
 		;;
 	mediatek,mt7622-rfb1-ubi|\
+	netgear,wax206|\
 	totolink,a8000ru|\
 	xiaomi,redmi-router-ax6s)
 		nand_do_platform_check "$board" "$1"
