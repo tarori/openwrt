@@ -80,12 +80,19 @@ endef
 $(eval $(call Download,ath10k-firmware-qca99x0-ct-htt))
 
 
-QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-12.bin-lede.022
+QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-11.bin-lede.001
 define Download/ath10k-firmware-qca9984-ct
-  $(call Download/ct-firmware,QCA9984,ath10k-9984-10-4b)
-  HASH:=7bfe5bf7c38532fa57db62ebc56ec625583928d5d4736475d5dec4d4ae031154
+  $(call Download/ct-firmware,QCA9984,ath10k-9984-10-4)
+  HASH:=204dde43a107911cd48ac04f6450365722fba6121487e49d4ef36b8aaa83339b
 endef
 $(eval $(call Download,ath10k-firmware-qca9984-ct))
+
+#QCA9984_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-12.bin-lede.022
+#  define Download/ath10k-firmware-qca9984-ct
+#  $(call Download/ct-firmware,QCA9984,ath10k-9984-10-4b)
+#  HASH:=7bfe5bf7c38532fa57db62ebc56ec625583928d5d4736475d5dec4d4ae031154
+#endef
+#$(eval $(call Download,ath10k-firmware-qca9984-ct))
 
 QCA9984_FIRMWARE_FILE_CT_FULL_HTT:=firmware-5-ct-full-htt-mgt-community-12.bin-lede.022
 define Download/ath10k-firmware-qca9984-ct-full-htt
@@ -94,13 +101,19 @@ define Download/ath10k-firmware-qca9984-ct-full-htt
 endef
 $(eval $(call Download,ath10k-firmware-qca9984-ct-full-htt))
 
-QCA9984_FIRMWARE_FILE_CT_HTT:=firmware-5-ct-htt-mgt-community-12.bin-lede.022
+QCA9984_FIRMWARE_FILE_CT_HTT:=firmware-5-ct-full-htt-mgt-community-11.bin-lede.001
 define Download/ath10k-firmware-qca9984-ct-htt
-  $(call Download/ct-firmware-htt,QCA9984,ath10k-9984-10-4b)
-  HASH:=a24e887f13aca4358ab2b6a42a7212d066e4d19e29b00bb26f9681b1dc8d0eb0
+  $(call Download/ct-firmware-htt,QCA9984,ath10k-9984-10-4)
+  HASH:=e60b6033e96a9b14f43aae360e6a35e1217f3e94a4578821ccdb3e2da8521fae
 endef
 $(eval $(call Download,ath10k-firmware-qca9984-ct-htt))
 
+#QCA9984_FIRMWARE_FILE_CT_HTT:=firmware-5-ct-htt-mgt-community-12.bin-lede.022
+#define Download/ath10k-firmware-qca9984-ct-htt
+#  $(call Download/ct-firmware-htt,QCA9984,ath10k-9984-10-4b)
+#  HASH:=a24e887f13aca4358ab2b6a42a7212d066e4d19e29b00bb26f9681b1dc8d0eb0
+#endef
+#$(eval $(call Download,ath10k-firmware-qca9984-ct-htt))
 
 QCA4019_FIRMWARE_FILE_CT:=firmware-5-ct-full-community-12.bin-lede.022
 define Download/ath10k-firmware-qca4019-ct
