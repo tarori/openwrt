@@ -1,0 +1,86 @@
+From 1f4ac8faa529bbca5152b01ca5e9f1727e5162a9 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 22 Aug 2024 22:43:41 +0200
+Subject: [PATCH] wifi: mt76: connac: move mt7615_mcu_del_wtbl_all to connac
+
+Preparation for reusing it in mt7915
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7615/init.c     |  2 +-
+ mt7615/mcu.c      | 10 ----------
+ mt7615/mt7615.h   |  1 -
+ mt76_connac_mcu.c | 11 +++++++++++
+ mt76_connac_mcu.h |  1 +
+ 5 files changed, 13 insertions(+), 12 deletions(-)
+
+--- a/mt7615/init.c
++++ b/mt7615/init.c
+@@ -319,7 +319,7 @@ void mt7615_init_work(struct mt7615_dev
+ 	mt7615_mcu_set_eeprom(dev);
+ 	mt7615_mac_init(dev);
+ 	mt7615_phy_init(dev);
+-	mt7615_mcu_del_wtbl_all(dev);
++	mt76_connac_mcu_del_wtbl_all(&dev->mt76);
+ 	mt7615_check_offload_capability(dev);
+ }
+ EXPORT_SYMBOL_GPL(mt7615_init_work);
+--- a/mt7615/mcu.c
++++ b/mt7615/mcu.c
+@@ -1876,16 +1876,6 @@ out:
+ 				 sizeof(req), true);
+ }
+ 
+-int mt7615_mcu_del_wtbl_all(struct mt7615_dev *dev)
+-{
+-	struct wtbl_req_hdr req = {
+-		.operation = WTBL_RESET_ALL,
+-	};
+-
+-	return mt76_mcu_send_msg(&dev->mt76, MCU_EXT_CMD(WTBL_UPDATE),
+-				 &req, sizeof(req), true);
+-}
+-
+ int mt7615_mcu_set_fcc5_lpn(struct mt7615_dev *dev, int val)
+ {
+ 	struct {
+--- a/mt7615/mt7615.h
++++ b/mt7615/mt7615.h
+@@ -399,7 +399,6 @@ void mt7615_mac_set_rates(struct mt7615_
+ 			  struct ieee80211_tx_rate *rates);
+ void mt7615_pm_wake_work(struct work_struct *work);
+ void mt7615_pm_power_save_work(struct work_struct *work);
+-int mt7615_mcu_del_wtbl_all(struct mt7615_dev *dev);
+ int mt7615_mcu_set_chan_info(struct mt7615_phy *phy, int cmd);
+ int mt7615_mcu_set_wmm(struct mt7615_dev *dev, u8 queue,
+ 		       const struct ieee80211_tx_queue_params *params);
+--- a/mt76_connac_mcu.c
++++ b/mt76_connac_mcu.c
+@@ -2842,6 +2842,17 @@ int mt76_connac_mcu_restart(struct mt76_
+ }
+ EXPORT_SYMBOL_GPL(mt76_connac_mcu_restart);
+ 
++int mt76_connac_mcu_del_wtbl_all(struct mt76_dev *dev)
++{
++	struct wtbl_req_hdr req = {
++		.operation = WTBL_RESET_ALL,
++	};
++
++	return mt76_mcu_send_msg(dev, MCU_EXT_CMD(WTBL_UPDATE),
++				 &req, sizeof(req), true);
++}
++EXPORT_SYMBOL_GPL(mt76_connac_mcu_del_wtbl_all);
++
+ int mt76_connac_mcu_rdd_cmd(struct mt76_dev *dev, int cmd, u8 index,
+ 			    u8 rx_sel, u8 val)
+ {
+--- a/mt76_connac_mcu.h
++++ b/mt76_connac_mcu.h
+@@ -2009,6 +2009,7 @@ void mt76_connac_mcu_wtbl_smps_tlv(struc
+ 				   void *sta_wtbl, void *wtbl_tlv);
+ int mt76_connac_mcu_set_pm(struct mt76_dev *dev, int band, int enter);
+ int mt76_connac_mcu_restart(struct mt76_dev *dev);
++int mt76_connac_mcu_del_wtbl_all(struct mt76_dev *dev);
+ int mt76_connac_mcu_rdd_cmd(struct mt76_dev *dev, int cmd, u8 index,
+ 			    u8 rx_sel, u8 val);
+ int mt76_connac_mcu_sta_wed_update(struct mt76_dev *dev, struct sk_buff *skb);

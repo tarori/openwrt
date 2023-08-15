@@ -1,0 +1,25 @@
+From 14d5ee9f336923cf693ebf56d75bee41782f8112 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 3 May 2024 22:42:39 +0200
+Subject: [PATCH 1/2] mt76: shrink mt76_queue_buf
+
+Reuse one bit from the length field for skip_unmap
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt76.h | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/mt76.h
++++ b/mt76.h
+@@ -166,8 +166,8 @@ enum mt76_dfs_state {
+ 
+ struct mt76_queue_buf {
+ 	dma_addr_t addr;
+-	u16 len;
+-	bool skip_unmap;
++	u16 len:15,
++	    skip_unmap:1;
+ };
+ 
+ struct mt76_tx_info {
