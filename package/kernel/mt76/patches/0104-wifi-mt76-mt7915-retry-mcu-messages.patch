@@ -1,0 +1,107 @@
+From a1a65d860812dc0ca7ba0da510a8339d9e5673ab Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 13 Aug 2024 20:19:32 +0200
+Subject: [PATCH 2/3] wifi: mt76: mt7915: retry mcu messages
+
+In some cases MCU messages can get lost. Instead of failing completely,
+attempt to recover by re-sending them.
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mcu.c        | 20 ++++++++++++++++++++
+ mt76.h       |  3 +++
+ mt7915/mcu.c |  7 ++-----
+ 3 files changed, 25 insertions(+), 5 deletions(-)
+
+--- a/mcu.c
++++ b/mcu.c
+@@ -73,6 +73,8 @@ int mt76_mcu_skb_send_and_get_msg(struct
+ 				  int cmd, bool wait_resp,
+ 				  struct sk_buff **ret_skb)
+ {
++	unsigned int retry = 0;
++	struct sk_buff *orig_skb = NULL;
+ 	unsigned long expires;
+ 	int ret, seq;
+ 
+@@ -81,6 +83,14 @@ int mt76_mcu_skb_send_and_get_msg(struct
+ 
+ 	mutex_lock(&dev->mcu.mutex);
+ 
++	if (dev->mcu_ops->mcu_skb_prepare_msg) {
++		ret = dev->mcu_ops->mcu_skb_prepare_msg(dev, skb, cmd, &seq);
++		if (ret < 0)
++			goto out;
++	}
++
++retry:
++	orig_skb = skb_get(skb);
+ 	ret = dev->mcu_ops->mcu_skb_send_msg(dev, skb, cmd, &seq);
+ 	if (ret < 0)
+ 		goto out;
+@@ -94,6 +104,14 @@ int mt76_mcu_skb_send_and_get_msg(struct
+ 
+ 	do {
+ 		skb = mt76_mcu_get_response(dev, expires);
++		if (!skb && !test_bit(MT76_MCU_RESET, &dev->phy.state) &&
++		    retry++ < dev->mcu_ops->max_retry) {
++			dev_err(dev->dev, "Retry message %08x (seq %d)\n",
++				cmd, seq);
++			skb = orig_skb;
++			goto retry;
++		}
++
+ 		ret = dev->mcu_ops->mcu_parse_response(dev, cmd, skb, seq);
+ 		if (!ret && ret_skb)
+ 			*ret_skb = skb;
+@@ -101,7 +119,9 @@ int mt76_mcu_skb_send_and_get_msg(struct
+ 			dev_kfree_skb(skb);
+ 	} while (ret == -EAGAIN);
+ 
++
+ out:
++	dev_kfree_skb(orig_skb);
+ 	mutex_unlock(&dev->mcu.mutex);
+ 
+ 	return ret;
+--- a/mt76.h
++++ b/mt76.h
+@@ -234,11 +234,14 @@ struct mt76_queue {
+ };
+ 
+ struct mt76_mcu_ops {
++	unsigned int max_retry;
+ 	u32 headroom;
+ 	u32 tailroom;
+ 
+ 	int (*mcu_send_msg)(struct mt76_dev *dev, int cmd, const void *data,
+ 			    int len, bool wait_resp);
++	int (*mcu_skb_prepare_msg)(struct mt76_dev *dev, struct sk_buff *skb,
++				   int cmd, int *seq);
+ 	int (*mcu_skb_send_msg)(struct mt76_dev *dev, struct sk_buff *skb,
+ 				int cmd, int *seq);
+ 	int (*mcu_parse_response)(struct mt76_dev *dev, int cmd,
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -191,11 +191,6 @@ mt7915_mcu_send_message(struct mt76_dev
+ {
+ 	struct mt7915_dev *dev = container_of(mdev, struct mt7915_dev, mt76);
+ 	enum mt76_mcuq_id qid;
+-	int ret;
+-
+-	ret = mt76_connac2_mcu_fill_message(mdev, skb, cmd, wait_seq);
+-	if (ret)
+-		return ret;
+ 
+ 	if (cmd == MCU_CMD(FW_SCATTER))
+ 		qid = MT_MCUQ_FWDL;
+@@ -2374,7 +2369,9 @@ int mt7915_mcu_init_firmware(struct mt79
+ int mt7915_mcu_init(struct mt7915_dev *dev)
+ {
+ 	static const struct mt76_mcu_ops mt7915_mcu_ops = {
++		.max_retry = 3,
+ 		.headroom = sizeof(struct mt76_connac2_mcu_txd),
++		.mcu_skb_prepare_msg = mt76_connac2_mcu_fill_message,
+ 		.mcu_skb_send_msg = mt7915_mcu_send_message,
+ 		.mcu_parse_response = mt7915_mcu_parse_response,
+ 	};

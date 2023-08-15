@@ -1,0 +1,23 @@
+From eb85bb3fd5bf02a78c175d9c3339fd715211105e Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 27 Sep 2024 19:37:19 +0200
+Subject: [PATCH] wifi: mt76: mt7915: fix eifs value on older chipsets
+
+Use the default firmware values
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/mac.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -1163,7 +1163,7 @@ void mt7915_mac_set_timing(struct mt7915
+ 	u32 ofdm = FIELD_PREP(MT_TIMEOUT_VAL_PLCP, 60) |
+ 		   FIELD_PREP(MT_TIMEOUT_VAL_CCA, 28);
+ 	u8 band = phy->mt76->band_idx;
+-	int eifs_ofdm = 360, sifs = 10, offset;
++	int eifs_ofdm = 84, sifs = 10, offset;
+ 	bool a_band = !(phy->mt76->chandef.chan->band == NL80211_BAND_2GHZ);
+ 
+ 	if (!test_bit(MT76_STATE_RUNNING, &phy->mt76->state))

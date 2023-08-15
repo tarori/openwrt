@@ -1,0 +1,27 @@
+From 7aca94abac477b0aae3c2a9ed8f0a639b0605a0f Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Fri, 27 Sep 2024 19:31:08 +0200
+Subject: [PATCH] wifi: mt76: mt7915: fix slot time for 5/6GHz
+
+It should only be set to 20 for long slot time on 2.4 GHz
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/main.c | 6 +++++-
+ 1 file changed, 5 insertions(+), 1 deletion(-)
+
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -639,7 +639,11 @@ static void mt7915_bss_info_changed(stru
+ 		mt7915_mac_enable_rtscts(dev, vif, info->use_cts_prot);
+ 
+ 	if (changed & BSS_CHANGED_ERP_SLOT) {
+-		int slottime = info->use_short_slot ? 9 : 20;
++		int slottime = 9;
++
++		if (phy->mt76->chandef.chan->band == NL80211_BAND_2GHZ &&
++		    !info->use_short_slot)
++			slottime = 20;
+ 
+ 		if (slottime != phy->slottime) {
+ 			phy->slottime = slottime;

@@ -1,0 +1,51 @@
+From a2a9d9826277c9d76f5c19fd98a27c6145fa6fbd Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Tue, 17 Sep 2024 12:58:18 +0200
+Subject: [PATCH] wifi: mt76: do not increase mcu skb refcount if retry is not
+ supported
+MIME-Version: 1.0
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 8bit
+
+If mcu_skb_prepare_msg is not implemented, incrementing skb refcount does not
+work for mcu message retry. In some cases (e.g. on SDIO), shared skbs can trigger
+a BUG_ON, crashing the system.
+Fix this by only incrementing refcount if retry is actually supported.
+
+Fixes: 3688c18b65ae ("wifi: mt76: mt7915: retry mcu messages")
+Reported-by: Nícolas F. R. A. Prado <nfraprado@collabora.com> #KernelCI
+Tested-by: Alper Nebi Yasak <alpernebiyasak@gmail.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mcu.c | 7 +++++--
+ 1 file changed, 5 insertions(+), 2 deletions(-)
+
+--- a/mcu.c
++++ b/mcu.c
+@@ -84,13 +84,16 @@ int mt76_mcu_skb_send_and_get_msg(struct
+ 	mutex_lock(&dev->mcu.mutex);
+ 
+ 	if (dev->mcu_ops->mcu_skb_prepare_msg) {
++		orig_skb = skb;
+ 		ret = dev->mcu_ops->mcu_skb_prepare_msg(dev, skb, cmd, &seq);
+ 		if (ret < 0)
+ 			goto out;
+ 	}
+ 
+ retry:
+-	orig_skb = skb_get(skb);
++	/* orig skb might be needed for retry, mcu_skb_send_msg consumes it */
++	if (orig_skb)
++		skb_get(orig_skb);
+ 	ret = dev->mcu_ops->mcu_skb_send_msg(dev, skb, cmd, &seq);
+ 	if (ret < 0)
+ 		goto out;
+@@ -105,7 +108,7 @@ retry:
+ 	do {
+ 		skb = mt76_mcu_get_response(dev, expires);
+ 		if (!skb && !test_bit(MT76_MCU_RESET, &dev->phy.state) &&
+-		    retry++ < dev->mcu_ops->max_retry) {
++		    orig_skb && retry++ < dev->mcu_ops->max_retry) {
+ 			dev_err(dev->dev, "Retry message %08x (seq %d)\n",
+ 				cmd, seq);
+ 			skb = orig_skb;

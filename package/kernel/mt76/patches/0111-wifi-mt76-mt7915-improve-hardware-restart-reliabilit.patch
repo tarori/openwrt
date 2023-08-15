@@ -1,0 +1,94 @@
+From b76f16ea652137d5fd3b5ce042723470b19025a7 Mon Sep 17 00:00:00 2001
+From: Felix Fietkau <nbd@nbd.name>
+Date: Thu, 22 Aug 2024 23:00:13 +0200
+Subject: [PATCH] wifi: mt76: mt7915: improve hardware restart reliability
+
+- use reconfig_complete to restart mac_work / queues
+- reset full wtbl after firmware init
+- clear wcid and vif mask to avoid leak
+
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/mac.c  | 22 +++++++++-------------
+ mt7915/main.c | 13 +++++++++++++
+ mt7915/mcu.c  |  2 ++
+ 3 files changed, 24 insertions(+), 13 deletions(-)
+
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -1463,7 +1463,6 @@ mt7915_mac_full_reset(struct mt7915_dev
+ 		if (!mt7915_mac_restart(dev))
+ 			break;
+ 	}
+-	mutex_unlock(&dev->mt76.mutex);
+ 
+ 	if (i == 10)
+ 		dev_err(dev->mt76.dev, "chip full reset failed\n");
+@@ -1473,21 +1472,18 @@ mt7915_mac_full_reset(struct mt7915_dev
+ 		list_del_init(dev->mt76.sta_poll_list.next);
+ 	spin_unlock_bh(&dev->mt76.sta_poll_lock);
+ 
+-	ieee80211_restart_hw(mt76_hw(dev));
+-	if (ext_phy)
+-		ieee80211_restart_hw(ext_phy->hw);
+-
+-	ieee80211_wake_queues(mt76_hw(dev));
+-	if (ext_phy)
+-		ieee80211_wake_queues(ext_phy->hw);
++	memset(dev->mt76.wcid_mask, 0, sizeof(dev->mt76.wcid_mask));
++	dev->mt76.vif_mask = 0;
+ 
++	i = mt76_wcid_alloc(dev->mt76.wcid_mask, MT7915_WTBL_STA);
++	dev->mt76.global_wcid.idx = i;
+ 	dev->recovery.hw_full_reset = false;
+-	ieee80211_queue_delayed_work(mt76_hw(dev), &dev->mphy.mac_work,
+-				     MT7915_WATCHDOG_TIME);
++
++	mutex_unlock(&dev->mt76.mutex);
++
++	ieee80211_restart_hw(mt76_hw(dev));
+ 	if (ext_phy)
+-		ieee80211_queue_delayed_work(ext_phy->hw,
+-					     &ext_phy->mac_work,
+-					     MT7915_WATCHDOG_TIME);
++		ieee80211_restart_hw(ext_phy->hw);
+ }
+ 
+ /* system error recovery */
+--- a/mt7915/main.c
++++ b/mt7915/main.c
+@@ -1660,6 +1660,17 @@ mt7915_net_fill_forward_path(struct ieee
+ }
+ #endif
+ 
++static void
++mt7915_reconfig_complete(struct ieee80211_hw *hw,
++			 enum ieee80211_reconfig_type reconfig_type)
++{
++	struct mt7915_phy *phy = mt7915_hw_phy(hw);
++
++	ieee80211_wake_queues(hw);
++	ieee80211_queue_delayed_work(hw, &phy->mt76->mac_work,
++				     MT7915_WATCHDOG_TIME);
++}
++
+ const struct ieee80211_ops mt7915_ops = {
+ 	.tx = mt7915_tx,
+ 	.start = mt7915_start,
+@@ -1714,4 +1725,5 @@ const struct ieee80211_ops mt7915_ops =
+ 	.net_fill_forward_path = mt7915_net_fill_forward_path,
+ 	.net_setup_tc = mt76_wed_net_setup_tc,
+ #endif
++	.reconfig_complete = mt7915_reconfig_complete,
+ };
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -2352,6 +2352,8 @@ int mt7915_mcu_init_firmware(struct mt79
+ 	if (ret)
+ 		return ret;
+ 
++	mt76_connac_mcu_del_wtbl_all(&dev->mt76);
++
+ 	if ((mtk_wed_device_active(&dev->mt76.mmio.wed) &&
+ 	     is_mt7915(&dev->mt76)) ||
+ 	    !mtk_wed_get_rx_capa(&dev->mt76.mmio.wed))
