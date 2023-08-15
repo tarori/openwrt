@@ -1,0 +1,35 @@
+From 3f27a64a80105d4209a530667b8a43563c39667e Mon Sep 17 00:00:00 2001
+From: Henry Yen <henry.yen@mediatek.com>
+Date: Thu, 22 Feb 2024 11:24:46 +0800
+Subject: [PATCH 05/11] wifi: mt76: mt7915: fix bogus Tx/Rx airtime duration
+ values
+
+Do not report measurements if the airtime counter was cleared since the
+last update (possibly by firmware)
+
+Signed-off-by: Henry Yen <henry.yen@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/mac.c | 11 +++++++++--
+ 1 file changed, 9 insertions(+), 2 deletions(-)
+
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -140,8 +140,15 @@ static void mt7915_mac_sta_poll(struct m
+ 			msta->airtime_ac[i] = mt76_rr(dev, addr);
+ 			msta->airtime_ac[i + 4] = mt76_rr(dev, addr + 4);
+ 
+-			tx_time[i] = msta->airtime_ac[i] - tx_last;
+-			rx_time[i] = msta->airtime_ac[i + 4] - rx_last;
++			if (msta->airtime_ac[i] <= tx_last)
++				tx_time[i] = 0;
++			else
++				tx_time[i] = msta->airtime_ac[i] - tx_last;
++
++			if (msta->airtime_ac[i + 4] <= rx_last)
++				rx_time[i] = 0;
++			else
++				rx_time[i] = msta->airtime_ac[i + 4] - rx_last;
+ 
+ 			if ((tx_last | rx_last) & BIT(30))
+ 				clear = true;

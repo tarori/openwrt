@@ -1,0 +1,27 @@
+From 8ede229eb8b505888e633142846267ceab613715 Mon Sep 17 00:00:00 2001
+From: Bo Jiao <Bo.Jiao@mediatek.com>
+Date: Thu, 7 Mar 2024 11:03:08 +0800
+Subject: [PATCH 07/11] wifi: mt76: mt7915: only set MT76_MCU_RESET for the
+ main phy
+
+The MT76_MCU_RESET flag is only read on the main phy.
+
+Signed-off-by: Bo Jiao <Bo.Jiao@mediatek.com>
+---
+ mt7915/mac.c | 4 +---
+ 1 file changed, 1 insertion(+), 3 deletions(-)
+
+--- a/mt7915/mac.c
++++ b/mt7915/mac.c
+@@ -1345,10 +1345,8 @@ mt7915_mac_restart(struct mt7915_dev *de
+ 	set_bit(MT76_RESET, &dev->mphy.state);
+ 	set_bit(MT76_MCU_RESET, &dev->mphy.state);
+ 	wake_up(&dev->mt76.mcu.wait);
+-	if (ext_phy) {
++	if (ext_phy)
+ 		set_bit(MT76_RESET, &ext_phy->state);
+-		set_bit(MT76_MCU_RESET, &ext_phy->state);
+-	}
+ 
+ 	/* lock/unlock all queues to ensure that no tx is pending */
+ 	mt76_txq_schedule_all(&dev->mphy);

@@ -1,0 +1,35 @@
+From af0e1f6dafb5f2f6ac00148aacb1a5d32b4feba6 Mon Sep 17 00:00:00 2001
+From: Bo Jiao <Bo.Jiao@mediatek.com>
+Date: Thu, 31 Aug 2023 14:22:16 +0800
+Subject: [PATCH] wifi: mt76: fix potential memory leak of beacon commands
+
+Fix potential memory leak when setting beacon and inband discovery
+commands.
+
+Fixes: e57b7901469f ("mt76: add mac80211 driver for MT7915 PCIe-based chipsets")
+Fixes: 98686cd21624 ("wifi: mt76: mt7996: add driver for MediaTek Wi-Fi 7 (802.11be) devices")
+Signed-off-by: Bo Jiao <Bo.Jiao@mediatek.com>
+Signed-off-by: Shayne Chen <shayne.chen@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/mcu.c | 10 ++++++++--
+ 1 files changed, 4 insertions(+), 1 deletions(-)
+
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -1980,11 +1980,14 @@ int mt7915_mcu_add_beacon(struct ieee802
+ 		goto out;
+ 
+ 	skb = ieee80211_beacon_get_template(hw, vif, &offs, 0);
+-	if (!skb)
++	if (!skb) {
++		dev_kfree_skb(rskb);
+ 		return -EINVAL;
++	}
+ 
+ 	if (skb->len > MT7915_MAX_BEACON_SIZE - MT_TXD_SIZE) {
+ 		dev_err(dev->mt76.dev, "Bcn size limit exceed\n");
++		dev_kfree_skb(rskb);
+ 		dev_kfree_skb(skb);
+ 		return -EINVAL;
+ 	}

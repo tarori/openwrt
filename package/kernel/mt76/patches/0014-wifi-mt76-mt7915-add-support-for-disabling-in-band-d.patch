@@ -1,0 +1,35 @@
+From e5fb6995e7eb99763a98e687376315281f47b220 Mon Sep 17 00:00:00 2001
+From: MeiChia Chiu <meichia.chiu@mediatek.com>
+Date: Thu, 23 Mar 2023 09:55:50 +0800
+Subject: [PATCH 09/11] wifi: mt76: mt7915: add support for disabling in-band
+ discovery
+
+Send an update to the MCU whenever the settings change
+
+Signed-off-by: MeiChia Chiu <MeiChia.Chiu@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/mcu.c | 5 ++---
+ 1 file changed, 2 insertions(+), 3 deletions(-)
+
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -1903,8 +1903,7 @@ mt7915_mcu_beacon_inband_discov(struct m
+ 	u8 *buf, interval;
+ 	int len;
+ 
+-	if (changed & BSS_CHANGED_FILS_DISCOVERY &&
+-	    vif->bss_conf.fils_discovery.max_interval) {
++	if (changed & BSS_CHANGED_FILS_DISCOVERY) {
+ 		interval = vif->bss_conf.fils_discovery.max_interval;
+ 		skb = ieee80211_get_fils_discovery_tmpl(hw, vif);
+ 	} else if (changed & BSS_CHANGED_UNSOL_BCAST_PROBE_RESP &&
+@@ -1939,7 +1938,7 @@ mt7915_mcu_beacon_inband_discov(struct m
+ 	discov->tx_type = !!(changed & BSS_CHANGED_FILS_DISCOVERY);
+ 	discov->tx_interval = interval;
+ 	discov->prob_rsp_len = cpu_to_le16(MT_TXD_SIZE + skb->len);
+-	discov->enable = true;
++	discov->enable = !!interval;
+ 
+ 	buf = (u8 *)tlv + sizeof(*discov);
+ 

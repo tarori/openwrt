@@ -1,0 +1,52 @@
+From 65d91a833b010c0923866ed362f79898d474451f Mon Sep 17 00:00:00 2001
+From: StanleyYP Wang <StanleyYP.Wang@mediatek.com>
+Date: Thu, 31 Aug 2023 14:22:17 +0800
+Subject: [PATCH] wifi: mt76: get rid of false alamrs of tx emission issues
+
+When the set_chan_info command is set with CH_SWITCH_NORMAL reason,
+even if the action is UNI_CHANNEL_RX_PATH, it'll still generate some
+unexpected tones, which might confuse DFS CAC tests that there are some
+tone leakages. To get rid of these kinds of false alarms, always bypass
+DPD calibration when IEEE80211_CONF_IDLE is set.
+
+Reviewed-by: Evelyn Tsai <evelyn.tsai@mediatek.com>
+Signed-off-by: StanleyYP Wang <StanleyYP.Wang@mediatek.com>
+Signed-off-by: Shayne Chen <shayne.chen@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ mt7915/mcu.c | 6 +++---
+ mt7996/mcu.c | 6 +++---
+ 2 files changed, 6 insertions(+), 6 deletions(-)
+
+--- a/mt7915/mcu.c
++++ b/mt7915/mcu.c
+@@ -2728,10 +2728,10 @@ int mt7915_mcu_set_chan_info(struct mt79
+ 	if (mt76_connac_spe_idx(phy->mt76->antenna_mask))
+ 		req.tx_path_num = fls(phy->mt76->antenna_mask);
+ 
+-	if (cmd == MCU_EXT_CMD(SET_RX_PATH) ||
+-	    dev->mt76.hw->conf.flags & IEEE80211_CONF_MONITOR)
++	if (dev->mt76.hw->conf.flags & IEEE80211_CONF_MONITOR)
+ 		req.switch_reason = CH_SWITCH_NORMAL;
+-	else if (phy->mt76->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL)
++	else if (phy->mt76->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL ||
++		 phy->mt76->hw->conf.flags & IEEE80211_CONF_IDLE)
+ 		req.switch_reason = CH_SWITCH_SCAN_BYPASS_DPD;
+ 	else if (!cfg80211_reg_can_beacon(phy->mt76->hw->wiphy, chandef,
+ 					  NL80211_IFTYPE_AP))
+--- a/mt7996/mcu.c
++++ b/mt7996/mcu.c
+@@ -2960,10 +2960,10 @@ int mt7996_mcu_set_chan_info(struct mt79
+ 		.channel_band = ch_band[chandef->chan->band],
+ 	};
+ 
+-	if (tag == UNI_CHANNEL_RX_PATH ||
+-	    dev->mt76.hw->conf.flags & IEEE80211_CONF_MONITOR)
++	if (dev->mt76.hw->conf.flags & IEEE80211_CONF_MONITOR)
+ 		req.switch_reason = CH_SWITCH_NORMAL;
+-	else if (phy->mt76->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL)
++	else if (phy->mt76->hw->conf.flags & IEEE80211_CONF_OFFCHANNEL ||
++		 phy->mt76->hw->conf.flags & IEEE80211_CONF_IDLE)
+ 		req.switch_reason = CH_SWITCH_SCAN_BYPASS_DPD;
+ 	else if (!cfg80211_reg_can_beacon(phy->mt76->hw->wiphy, chandef,
+ 					  NL80211_IFTYPE_AP))

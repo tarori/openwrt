@@ -1,0 +1,56 @@
+From 9c261c320bf26115748de0db50cb5fe23149b83f Mon Sep 17 00:00:00 2001
+From: tarori <ritarot634@gmail.com>
+Date: Wed, 6 Mar 2024 12:57:12 +0900
+Subject: [PATCH] fix padding of flow offload
+
+---
+ net/netfilter/nf_flow_table_ip.c | 10 +++++++---
+ 1 file changed, 7 insertions(+), 3 deletions(-)
+
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -27,7 +27,7 @@ static int nf_flow_state_check(struct fl
+ 		return 0;
+ 
+ 	tcph = (void *)(skb_network_header(skb) + thoff);
+-	if (unlikely(tcph->fin || tcph->rst)) {
++	if (unlikely(tcph->syn || tcph->fin || tcph->rst)) {
+ 		flow_offload_teardown(flow);
+ 		return -1;
+ 	}
+@@ -321,7 +321,7 @@ nf_flow_offload_ip_hook(void *priv, stru
+ {
+ 	struct flow_offload_tuple_rhash *tuplehash;
+ 	struct nf_flowtable *flow_table = priv;
+-	struct flow_offload_tuple tuple = {};
++	struct flow_offload_tuple tuple;
+ 	enum flow_offload_tuple_dir dir;
+ 	struct flow_offload *flow;
+ 	struct net_device *outdev;
+@@ -332,6 +332,8 @@ nf_flow_offload_ip_hook(void *priv, stru
+ 	__be32 nexthop;
+ 	int ret;
+ 
++	memset(&tuple, 0, sizeof(tuple));
++
+ 	if (skb->protocol != htons(ETH_P_IP) &&
+ 	    !nf_flow_skb_encap_protocol(skb, htons(ETH_P_IP), &offset))
+ 		return NF_ACCEPT;
+@@ -562,7 +564,7 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ {
+ 	struct flow_offload_tuple_rhash *tuplehash;
+ 	struct nf_flowtable *flow_table = priv;
+-	struct flow_offload_tuple tuple = {};
++	struct flow_offload_tuple tuple;
+ 	enum flow_offload_tuple_dir dir;
+ 	const struct in6_addr *nexthop;
+ 	struct flow_offload *flow;
+@@ -573,6 +575,8 @@ nf_flow_offload_ipv6_hook(void *priv, st
+ 	struct rt6_info *rt;
+ 	int ret;
+ 
++	memset(&tuple, 0, sizeof(tuple));
++
+ 	if (skb->protocol != htons(ETH_P_IPV6) &&
+ 	    !nf_flow_skb_encap_protocol(skb, htons(ETH_P_IPV6), &offset))
+ 		return NF_ACCEPT;

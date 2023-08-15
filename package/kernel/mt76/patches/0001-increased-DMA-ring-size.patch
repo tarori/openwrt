@@ -1,0 +1,54 @@
+From f4d5beba9350fb5866145a4eb5ae3d52b5676f4a Mon Sep 17 00:00:00 2001
+From: tarori <ritarot634@gmail.com>
+Date: Mon, 14 Aug 2023 02:05:28 +0900
+Subject: [PATCH] Increased DMA ring size
+
+---
+ mt7615/dma.c    | 9 ++-------
+ mt7915/mt7915.h | 4 +-
+ 2 files changed, 4 insertions(+), 9 deletions(-)
+
+--- a/mt7615/dma.c
++++ b/mt7615/dma.c
+@@ -25,8 +25,7 @@ mt7622_init_tx_queues_multi(struct mt761
+ 
+ 	for (i = 0; i < ARRAY_SIZE(wmm_queue_map); i++) {
+ 		ret = mt76_init_tx_queue(&dev->mphy, i, wmm_queue_map[i],
+-					 MT7615_TX_RING_SIZE / 2,
+-					 MT_TX_RING_BASE, 0);
++					 MT7615_TX_RING_SIZE, MT_TX_RING_BASE, 0);
+ 		if (ret)
+ 			return ret;
+ 	}
+@@ -219,7 +218,6 @@ void mt7615_dma_start(struct mt7615_dev
+ 
+ int mt7615_dma_init(struct mt7615_dev *dev)
+ {
+-	int rx_ring_size = MT7615_RX_RING_SIZE;
+ 	u32 mask;
+ 	int ret;
+ 
+@@ -268,11 +266,8 @@ int mt7615_dma_init(struct mt7615_dev *d
+ 	if (ret)
+ 		return ret;
+ 
+-	if (!is_mt7615(&dev->mt76))
+-	    rx_ring_size /= 2;
+-
+ 	ret = mt76_queue_alloc(dev, &dev->mt76.q_rx[MT_RXQ_MAIN], 0,
+-			       rx_ring_size, MT_RX_BUF_SIZE, MT_RX_RING_BASE);
++			       MT7615_RX_RING_SIZE, MT_RX_BUF_SIZE, MT_RX_RING_BASE);
+ 	if (ret)
+ 		return ret;
+ 
+--- a/mt7915/mt7915.h
++++ b/mt7915/mt7915.h
+@@ -23,7 +23,7 @@
+ #define MT7915_TX_MCU_RING_SIZE		256
+ #define MT7915_TX_FWDL_RING_SIZE	128
+ 
+-#define MT7915_RX_RING_SIZE		1536
++#define MT7915_RX_RING_SIZE		2048
+ #define MT7915_RX_MCU_RING_SIZE		512
+ 
+ #define MT7915_FIRMWARE_WA		"mediatek/mt7915_wa.bin"

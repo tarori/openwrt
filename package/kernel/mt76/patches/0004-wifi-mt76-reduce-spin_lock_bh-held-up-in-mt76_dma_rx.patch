@@ -1,0 +1,43 @@
+From d6cc20bf591308f171dbe9a621e7f7a0bb8ce033 Mon Sep 17 00:00:00 2001
+From: Sean Wang <sean.wang@mediatek.com>
+Date: Wed, 27 Sep 2023 06:20:25 +0800
+Subject: [PATCH] wifi: mt76: reduce spin_lock_bh held up in
+ mt76_dma_rx_cleanup
+
+mt76_dma_rx_cleanup would be frequenetly called up to reset the dma rings
+to be freshed as new ones when switching back from the deep sleep mode to
+the active mode on mt7921 and mt7922.
+
+Shrink the scope of spin_lock_bh in mt76_dma_rx_cleanup being held up
+to allow the kernel scheduler to be able to switch other tasks in time
+by reducing the latency.
+
+Signed-off-by: Sean Wang <sean.wang@mediatek.com>
+Signed-off-by: Felix Fietkau <nbd@nbd.name>
+---
+ dma.c | 6 ++++--
+ 1 file changed, 4 insertions(+), 2 deletions(-)
+
+--- a/dma.c
++++ b/dma.c
+@@ -737,16 +737,18 @@ mt76_dma_rx_cleanup(struct mt76_dev *dev
+ 	if (!q->ndesc)
+ 		return;
+ 
+-	spin_lock_bh(&q->lock);
+-
+ 	do {
++		spin_lock_bh(&q->lock);
+ 		buf = mt76_dma_dequeue(dev, q, true, NULL, NULL, &more, NULL);
++		spin_unlock_bh(&q->lock);
++
+ 		if (!buf)
+ 			break;
+ 
+ 		mt76_put_page_pool_buf(buf, false);
+ 	} while (1);
+ 
++	spin_lock_bh(&q->lock);
+ 	if (q->rx_head) {
+ 		dev_kfree_skb(q->rx_head);
+ 		q->rx_head = NULL;
