@@ -182,8 +182,6 @@
 
 				wan: port@5 {
 					label = "wan";
-					nvmem-cells = <&macaddr_factory_7fffa>;
-					nvmem-cell-names = "mac-address";
 					phy-handle = <&rtl8221b_phy>;
 					phy-mode = "2500base-x";
 					reg = <5>;
@@ -416,9 +414,6 @@
 					reg = <0x7fff4 0x6>;
 				};
 
-				macaddr_factory_7fffa: macaddr@7fffa {
-					reg = <0x7fffa 0x6>;
-				};
 			};
 
 			partition@2c0000 {
