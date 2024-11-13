@@ -209,6 +209,9 @@
 			interrupts = <52 IRQ_TYPE_LEVEL_HIGH>;
 			reset-assert-us = <100000>;
 			reset-deassert-us = <100000>;
+                        eee-broken-100tx;
+                        eee-broken-1000t;
+                        eee-broken-10gt;
 		};
 	};
 };
