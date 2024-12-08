@@ -1,0 +1,20 @@
+From 4541781923b17d8c57b2919f8d921d408d81ba72 Mon Sep 17 00:00:00 2001
+From: tarori <ritarot634@gmail.com>
+Date: Wed, 2 Oct 2024 18:01:06 +0900
+Subject: [PATCH] Disable MSI for mt7915
+
+---
+ mt7915/pci.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/mt7915/pci.c
++++ b/mt7915/pci.c
+@@ -144,7 +144,7 @@ static int mt7915_pci_probe(struct pci_d
+ 	if (!ret) {
+ 		hif2 = mt7915_pci_init_hif2(pdev);
+ 
+-		ret = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_ALL_TYPES);
++		ret = pci_alloc_irq_vectors(pdev, 1, 1, PCI_IRQ_LEGACY);
+ 		if (ret < 0)
+ 			goto free_device;
+ 

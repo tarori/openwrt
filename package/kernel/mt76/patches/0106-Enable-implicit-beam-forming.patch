@@ -1,0 +1,19 @@
+From 138aa9a39869edcad60b3b03c64e3828af0c4559 Mon Sep 17 00:00:00 2001
+From: tarori <ritarot634@gmail.com>
+Date: Tue, 9 Apr 2024 01:28:47 +0900
+Subject: [PATCH 2/2] Enable implicit beam forming
+
+---
+ mt7915/init.c | 1 +
+ 1 file changed, 1 insertion(+)
+
+--- a/mt7915/init.c
++++ b/mt7915/init.c
+@@ -657,6 +657,7 @@ int mt7915_txbf_init(struct mt7915_dev *
+ 		return ret;
+ 
+ 	/* enable eBF */
++	dev->ibf = true;
+ 	return mt7915_mcu_set_txbf(dev, MT_BF_TYPE_UPDATE);
+ }
+ 
