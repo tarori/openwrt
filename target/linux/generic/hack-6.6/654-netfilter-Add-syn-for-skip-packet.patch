@@ -1,0 +1,20 @@
+From cd24e04b9d0ffdfae34a4e376f894af037590c85 Mon Sep 17 00:00:00 2001
+From: tarori <ritarot634@gmail.com>
+Date: Sun, 22 Jun 2025 16:53:30 +0900
+Subject: [PATCH] netfilter:Add syn for skip packet
+
+---
+ net/netfilter/nf_flow_table_ip.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+--- a/net/netfilter/nf_flow_table_ip.c
++++ b/net/netfilter/nf_flow_table_ip.c
+@@ -28,7 +28,7 @@ static int nf_flow_state_check(struct fl
+ 		return 0;
+ 
+ 	tcph = (void *)(skb_network_header(skb) + thoff);
+-	if (unlikely(tcph->fin || tcph->rst)) {
++	if (unlikely(tcph->syn || tcph->fin || tcph->rst)) {
+ 		flow_offload_teardown(flow);
+ 		return -1;
+ 	}
