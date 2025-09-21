@@ -12,6 +12,18 @@ asus_initial_setup()
 	ubimkvol /dev/ubi0 -N jffs2 -s 0x3e000
 }
 
+buffalo_initial_setup()
+{
+	local mtdnum="$( find_mtd_index ubi )"
+	if [ ! "$mtdnum" ]; then
+		echo "unable to find mtd partition ubi"
+		return 1
+	fi
+
+	ubidetach -m "$mtdnum"
+	ubiformat /dev/mtd$mtdnum -y
+}
+
 xiaomi_initial_setup()
 {
 	# initialize UBI and setup uboot-env if it's running on initramfs
@@ -71,6 +83,7 @@ platform_do_upgrade() {
 	bananapi,bpi-r3-mini|\
 	bananapi,bpi-r4|\
 	bananapi,bpi-r4-poe|\
+	buffalo,wsr-6000ax8|\
 	cmcc,a10-ubootmod|\
 	cmcc,rax3000m|\
 	cudy,tr3000-v1-ubootmod|\
@@ -261,6 +274,9 @@ platform_pre_upgrade() {
 	asus,tuf-ax4200q|\
 	asus,tuf-ax6000)
 		asus_initial_setup
+		;;
+	buffalo,wsr-6000ax8)
+		buffalo_initial_setup
 		;;
 	xiaomi,mi-router-ax3000t|\
 	xiaomi,mi-router-wr30u-stock|\
