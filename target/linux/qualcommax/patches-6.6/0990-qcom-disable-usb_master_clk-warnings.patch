@@ -1,0 +1,29 @@
+From 32a4dda520f9fbd4143b3571f4bf03dd53cd35b8 Mon Sep 17 00:00:00 2001
+From: tarori <ritarot634@gmail.com>
+Date: Sun, 21 Dec 2025 22:13:43 +0900
+Subject: [PATCH] IPQ807x: Disable usb_master_clk warnings
+
+---
+ drivers/clk/qcom/gcc-ipq8074.c | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+--- a/drivers/clk/qcom/gcc-ipq8074.c
++++ b/drivers/clk/qcom/gcc-ipq8074.c
+@@ -2620,7 +2620,7 @@ static struct clk_branch gcc_usb0_master
+ 			.parent_hws = (const struct clk_hw *[]){
+ 				&usb0_master_clk_src.clkr.hw },
+ 			.num_parents = 1,
+-			.flags = CLK_SET_RATE_PARENT,
++			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
+ 			.ops = &clk_branch2_ops,
+ 		},
+ 	},
+@@ -2733,7 +2733,7 @@ static struct clk_branch gcc_usb1_master
+ 			.parent_hws = (const struct clk_hw *[]){
+ 				&usb1_master_clk_src.clkr.hw },
+ 			.num_parents = 1,
+-			.flags = CLK_SET_RATE_PARENT,
++			.flags = CLK_SET_RATE_PARENT | CLK_IGNORE_UNUSED,
+ 			.ops = &clk_branch2_ops,
+ 		},
+ 	},
